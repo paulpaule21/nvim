@@ -10,8 +10,8 @@ return {
     local lspconfig = require("lspconfig")
     local mason_lspconfig = require("mason-lspconfig")
     local cmp_nvim_lsp = require("cmp_nvim_lsp")
-    local keymap = vim.keymap
     local capabilities = cmp_nvim_lsp.default_capabilities()
+    local keymap = vim.keymap
 
     -- Diagnostic signs
     local signs = { Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }
@@ -20,67 +20,99 @@ return {
       vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
     end
 
-    -- on_attach
-    local function on_attach(client, bufnr)
-      local opts = { buffer = bufnr, silent = true }
+    -- LspAttach autocmd for on_attach behavior
+    vim.api.nvim_create_autocmd("LspAttach", {
+      group = vim.api.nvim_create_augroup("UserLspConfig", { clear = true }),
+      callback = function(ev)
+        local bufnr = ev.buf
+        local client = vim.lsp.get_client_by_id(ev.data.client_id)
+        local opts = { buffer = bufnr, silent = true }
 
-      -- Keymaps
-      opts.desc = "Show LSP references"
-      keymap.set("n", "gR", "<cmd>Telescope lsp_references<CR>", opts)
-      opts.desc = "Go to declaration"
-      keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
-      opts.desc = "Show LSP definitions"
-      keymap.set("n", "gd", "<cmd>Telescope lsp_definitions<CR>", opts)
-      opts.desc = "Show LSP implementations"
-      keymap.set("n", "gi", "<cmd>Telescope lsp_implementations<CR>", opts)
-      opts.desc = "Show LSP type definitions"
-      keymap.set("n", "gt", "<cmd>Telescope lsp_type_definitions<CR>", opts)
-      opts.desc = "See available code actions"
-      keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts)
-      opts.desc = "Smart rename"
-      keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
-      opts.desc = "Show buffer diagnostics"
-      keymap.set("n", "<leader>D", "<cmd>Telescope diagnostics bufnr=0<CR>", opts)
-      opts.desc = "Show line diagnostics"
-      keymap.set("n", "<leader>d", vim.diagnostic.open_float, opts)
-      opts.desc = "Go to previous diagnostic"
-      keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
-      opts.desc = "Go to next diagnostic"
-      keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
-      opts.desc = "Show documentation for what is under cursor"
-      keymap.set("n", "K", vim.lsp.buf.hover, opts)
-      opts.desc = "Restart LSP"
-      keymap.set("n", "<leader>rs", ":LspRestart<CR>", opts)
+        -- Keymaps
+        opts.desc = "Show LSP references"
+        keymap.set("n", "gR", "<cmd>Telescope lsp_references<CR>", opts)
 
-      -- Disable other formatters if using eslint
-      if client.name == "eslint" then
-        client.server_capabilities.documentFormattingProvider = false
-        vim.api.nvim_create_autocmd("BufWritePre", {
-          buffer = bufnr,
-          callback = function()
-            vim.cmd("EslintFixAll")
-          end,
-        })
-      elseif client.name == "tsserver" then
-        client.server_capabilities.documentFormattingProvider = false
-      elseif client.supports_method("textDocument/formatting") then
-        vim.api.nvim_create_autocmd("BufWritePre", {
-          buffer = bufnr,
-          callback = function()
-            vim.lsp.buf.format({ bufnr = bufnr })
-          end,
-        })
-      end
-    end
+        opts.desc = "Go to declaration"
+        keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
 
-    -- Setup LSP servers
+        opts.desc = "Show LSP definitions"
+        keymap.set("n", "gd", "<cmd>Telescope lsp_definitions<CR>", opts)
+
+        opts.desc = "Show LSP implementations"
+        keymap.set("n", "gi", "<cmd>Telescope lsp_implementations<CR>", opts)
+
+        opts.desc = "Show LSP type definitions"
+        keymap.set("n", "gt", "<cmd>Telescope lsp_type_definitions<CR>", opts)
+
+        opts.desc = "See available code actions"
+        keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts)
+
+        opts.desc = "Smart rename"
+        keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+
+        opts.desc = "Show buffer diagnostics"
+        keymap.set("n", "<leader>D", "<cmd>Telescope diagnostics bufnr=0<CR>", opts)
+
+        opts.desc = "Show line diagnostics"
+        keymap.set("n", "<leader>d", vim.diagnostic.open_float, opts)
+
+        opts.desc = "Show documentation for what is under cursor"
+        keymap.set("n", "K", vim.lsp.buf.hover, opts)
+
+        opts.desc = "Restart LSP"
+        keymap.set("n", "<leader>rs", ":LspRestart<CR>", opts)
+
+        -- Format-on-save and import organize
+        if client.name == "eslint" then
+          client.server_capabilities.documentFormattingProvider = false
+          vim.api.nvim_create_autocmd("BufWritePre", {
+            buffer = bufnr,
+            callback = function()
+              vim.cmd("EslintFixAll")
+            end,
+          })
+        elseif client.name == "tsserver" then
+          client.server_capabilities.documentFormattingProvider = false
+        elseif client.name == "gopls" then
+          vim.api.nvim_create_autocmd("BufWritePre", {
+            buffer = bufnr,
+            callback = function()
+              local params = {
+                context = { only = { "source.organizeImports" } },
+                textDocument = vim.lsp.util.make_text_document_params(),
+              }
+              local result = vim.lsp.buf_request_sync(bufnr, "textDocument/codeAction", params, 1000)
+              for _, res in pairs(result or {}) do
+                for _, action in pairs(res.result or {}) do
+                  if action.edit then
+                    vim.lsp.util.apply_workspace_edit(action.edit, client.offset_encoding)
+                  elseif action.command then
+                    vim.lsp.buf.execute_command(action.command)
+                  end
+                end
+              end
+
+              vim.lsp.buf.format({ bufnr = bufnr })
+            end,
+          })
+        elseif client.supports_method("textDocument/formatting") then
+          vim.api.nvim_create_autocmd("BufWritePre", {
+            buffer = bufnr,
+            callback = function()
+              vim.lsp.buf.format({ bufnr = bufnr })
+            end,
+          })
+        end
+      end,
+    })
+
+    -- Setup mason-lspconfig
     mason_lspconfig.setup()
     local servers = mason_lspconfig.get_installed_servers()
 
     for _, server_name in ipairs(servers) do
       local opts = {
         capabilities = capabilities,
-        on_attach = on_attach,
       }
 
       if server_name == "lua_ls" then
