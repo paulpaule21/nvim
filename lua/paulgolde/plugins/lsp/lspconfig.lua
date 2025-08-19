@@ -30,19 +30,19 @@ return {
 
         -- Keymaps
         opts.desc = "Show LSP references"
-        keymap.set("n", "gR", "<cmd>Telescope lsp_references<CR>", opts)
+        keymap.set("n", "<leader>gR", "<cmd>Telescope lsp_references<CR>", opts)
 
         opts.desc = "Go to declaration"
-        keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
+        keymap.set("n", "<leader>gD", vim.lsp.buf.declaration, opts)
 
         opts.desc = "Show LSP definitions"
-        keymap.set("n", "gd", "<cmd>Telescope lsp_definitions<CR>", opts)
+        keymap.set("n", "<leader>gd", "<cmd>Telescope lsp_definitions<CR>", opts)
 
         opts.desc = "Show LSP implementations"
-        keymap.set("n", "gi", "<cmd>Telescope lsp_implementations<CR>", opts)
+        keymap.set("n", "<leader>gi", "<cmd>Telescope lsp_implementations<CR>", opts)
 
         opts.desc = "Show LSP type definitions"
-        keymap.set("n", "gt", "<cmd>Telescope lsp_type_definitions<CR>", opts)
+        keymap.set("n", "<leader>gt", "<cmd>Telescope lsp_type_definitions<CR>", opts)
 
         opts.desc = "See available code actions"
         keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts)
@@ -57,23 +57,25 @@ return {
         keymap.set("n", "<leader>d", vim.diagnostic.open_float, opts)
 
         opts.desc = "Show documentation for what is under cursor"
-        keymap.set("n", "K", vim.lsp.buf.hover, opts)
+        keymap.set("n", "<leader>K", vim.lsp.buf.hover, opts)
 
         opts.desc = "Restart LSP"
         keymap.set("n", "<leader>rs", ":LspRestart<CR>", opts)
 
         -- Format-on-save and import organize
         if client.name == "eslint" then
-          client.server_capabilities.documentFormattingProvider = false
+          client.server_capabilities.documentFormattingProvider = true
           vim.api.nvim_create_autocmd("BufWritePre", {
             buffer = bufnr,
             callback = function()
               vim.cmd("EslintFixAll")
+              vim.lsp.buf.format({ bufnr = bufnr })
             end,
           })
-        elseif client.name == "tsserver" then
+        elseif client.name == "typescript-language-server" then
           client.server_capabilities.documentFormattingProvider = false
         elseif client.name == "gopls" then
+          print("gopls attached")
           vim.api.nvim_create_autocmd("BufWritePre", {
             buffer = bufnr,
             callback = function()
@@ -95,7 +97,7 @@ return {
               vim.lsp.buf.format({ bufnr = bufnr })
             end,
           })
-        elseif client.supports_method("textDocument/formatting") then
+        elseif client.supports_method("textDocument/formatting", bufnr) then
           vim.api.nvim_create_autocmd("BufWritePre", {
             buffer = bufnr,
             callback = function()
@@ -139,6 +141,14 @@ return {
           "eslint.config.mjs",
           "package.json"
         )
+      elseif server_name == "typescript-language-server" then
+        -- Disable formatting for tsserver as eslint handles it
+        opts.handlers = {
+          ["textDocument/formatting"] = function() end,
+        }
+      elseif server_name == "gopls" then
+        -- Ensure gopls root is correct
+        opts.root_dir = lspconfig.util.root_pattern("go.mod", ".git")
       end
 
       lspconfig[server_name].setup(opts)
