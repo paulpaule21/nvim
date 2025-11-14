@@ -1,89 +1,98 @@
 return {
   "neovim/nvim-lspconfig",
+  version = false, -- use HEAD
   event = { "BufReadPre", "BufNewFile" },
   dependencies = {
-    "hrsh7th/cmp-nvim-lsp",
+    { "hrsh7th/cmp-nvim-lsp",                lazy = false },
     { "antosha417/nvim-lsp-file-operations", config = true },
     { "folke/neodev.nvim",                   opts = {} },
   },
+
   config = function()
-    local lspconfig = require("lspconfig")
+    ---------------------------------------------------------------------------
+    -- CAPABILITIES
+    ---------------------------------------------------------------------------
     local mason_lspconfig = require("mason-lspconfig")
     local cmp_nvim_lsp = require("cmp_nvim_lsp")
     local capabilities = cmp_nvim_lsp.default_capabilities()
     local keymap = vim.keymap
 
-    -- Diagnostic signs
-    local signs = { Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }
-    for type, icon in pairs(signs) do
-      local hl = "DiagnosticSign" .. type
-      vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
-    end
+    ---------------------------------------------------------------------------
+    -- MODERN DIAGNOSTIC SIGNS (Neovim 0.11+ API)
+    ---------------------------------------------------------------------------
+    vim.diagnostic.config({
+      signs = {
+        text = {
+          [vim.diagnostic.severity.ERROR] = " ",
+          [vim.diagnostic.severity.WARN] = " ",
+          [vim.diagnostic.severity.HINT] = "󰠠 ",
+          [vim.diagnostic.severity.INFO] = " ",
+        },
+      },
+    })
 
-    -- LspAttach autocmd for on_attach behavior
+    ---------------------------------------------------------------------------
+    -- ON_ATTACH VIA LspAttach
+    ---------------------------------------------------------------------------
     vim.api.nvim_create_autocmd("LspAttach", {
       group = vim.api.nvim_create_augroup("UserLspConfig", { clear = true }),
       callback = function(ev)
         local bufnr = ev.buf
         local client = vim.lsp.get_client_by_id(ev.data.client_id)
+
         local opts = { buffer = bufnr, silent = true }
 
-        -- Keymaps
-        opts.desc = "Show LSP references"
+        -----------------------------------------------------------------------
+        -- KEYMAPS
+        -----------------------------------------------------------------------
+        opts.desc = "LSP references"
         keymap.set("n", "<leader>gR", "<cmd>Telescope lsp_references<CR>", opts)
 
         opts.desc = "Go to declaration"
         keymap.set("n", "<leader>gD", vim.lsp.buf.declaration, opts)
 
-        opts.desc = "Show LSP definitions"
+        opts.desc = "Show definitions"
         keymap.set("n", "<leader>gd", "<cmd>Telescope lsp_definitions<CR>", opts)
 
-        opts.desc = "Show LSP implementations"
+        opts.desc = "Show implementations"
         keymap.set("n", "<leader>gi", "<cmd>Telescope lsp_implementations<CR>", opts)
 
-        opts.desc = "Show LSP type definitions"
+        opts.desc = "Show type definitions"
         keymap.set("n", "<leader>gt", "<cmd>Telescope lsp_type_definitions<CR>", opts)
 
-        opts.desc = "See available code actions"
+        opts.desc = "Code actions"
         keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts)
 
-        opts.desc = "Smart rename"
+        opts.desc = "Rename symbol"
         keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
 
-        opts.desc = "Show buffer diagnostics"
+        opts.desc = "Buffer diagnostics"
         keymap.set("n", "<leader>D", "<cmd>Telescope diagnostics bufnr=0<CR>", opts)
 
-        opts.desc = "Show line diagnostics"
+        opts.desc = "Line diagnostics"
         keymap.set("n", "<leader>d", vim.diagnostic.open_float, opts)
 
-        opts.desc = "Show documentation for what is under cursor"
+        opts.desc = "Hover"
         keymap.set("n", "<leader>K", vim.lsp.buf.hover, opts)
 
         opts.desc = "Restart LSP"
-        keymap.set("n", "<leader>rs", ":LspRestart<CR>", opts)
+        keymap.set("n", "<leader>rs", "<cmd>LspRestart<CR>", opts)
 
-        -- Format-on-save and import organize
-        if client.name == "eslint" then
-          client.server_capabilities.documentFormattingProvider = true
+        -----------------------------------------------------------------------
+        -- AUTOFORMAT
+        -----------------------------------------------------------------------
+        if client.name == "gopls" then
           vim.api.nvim_create_autocmd("BufWritePre", {
             buffer = bufnr,
             callback = function()
-              vim.cmd("EslintFixAll")
-              vim.lsp.buf.format({ bufnr = bufnr })
-            end,
-          })
-        elseif client.name == "typescript-language-server" then
-          client.server_capabilities.documentFormattingProvider = false
-        elseif client.name == "gopls" then
-          print("gopls attached")
-          vim.api.nvim_create_autocmd("BufWritePre", {
-            buffer = bufnr,
-            callback = function()
+              -- organize imports
               local params = {
                 context = { only = { "source.organizeImports" } },
                 textDocument = vim.lsp.util.make_text_document_params(),
               }
+
               local result = vim.lsp.buf_request_sync(bufnr, "textDocument/codeAction", params, 1000)
+
               for _, res in pairs(result or {}) do
                 for _, action in pairs(res.result or {}) do
                   if action.edit then
@@ -97,7 +106,7 @@ return {
               vim.lsp.buf.format({ bufnr = bufnr })
             end,
           })
-        elseif client.supports_method("textDocument/formatting", bufnr) then
+        elseif client:supports_method("textDocument/formatting") then
           vim.api.nvim_create_autocmd("BufWritePre", {
             buffer = bufnr,
             callback = function()
@@ -108,50 +117,41 @@ return {
       end,
     })
 
-    -- Setup mason-lspconfig
+    ---------------------------------------------------------------------------
+    -- MASON-LSPCONFIG
+    ---------------------------------------------------------------------------
     mason_lspconfig.setup()
-    local servers = mason_lspconfig.get_installed_servers()
 
-    for _, server_name in ipairs(servers) do
+    ---------------------------------------------------------------------------
+    -- AUTO-SETUP INSTALLED SERVERS (Neovim 0.11+ API)
+    ---------------------------------------------------------------------------
+
+    local lspconfig = require("lspconfig")
+
+    for _, server in ipairs(mason_lspconfig.get_installed_servers()) do
       local opts = {
         capabilities = capabilities,
       }
 
-      if server_name == "lua_ls" then
+      if server == "lua_ls" then
         opts.settings = {
           Lua = {
-            diagnostics = {
-              globals = { "vim" },
-            },
-            completion = {
-              callSnippet = "Replace",
-            },
+            diagnostics = { globals = { "vim" } },
+            completion = { callSnippet = "Replace" },
           },
         }
-      elseif server_name == "eslint" then
+      elseif server == "gopls" then
         opts.settings = {
-          format = { enable = true },
+          gopls = {
+            analyses = { unusedparams = true },
+            staticcheck = true,
+          },
         }
-        opts.root_dir = lspconfig.util.root_pattern(
-          ".eslintrc",
-          ".eslintrc.js",
-          ".eslintrc.cjs",
-          ".eslintrc.json",
-          "eslint.config.js",
-          "eslint.config.mjs",
-          "package.json"
-        )
-      elseif server_name == "typescript-language-server" then
-        -- Disable formatting for tsserver as eslint handles it
-        opts.handlers = {
-          ["textDocument/formatting"] = function() end,
-        }
-      elseif server_name == "gopls" then
-        -- Ensure gopls root is correct
-        opts.root_dir = lspconfig.util.root_pattern("go.mod", ".git")
+        opts.root_dir = vim.fs.dirname(vim.fs.find({ "go.mod", ".git" }, { upward = true })[1])
       end
 
-      lspconfig[server_name].setup(opts)
+      -- ✔ Correct API
+      lspconfig[server].setup(opts)
     end
   end,
 }

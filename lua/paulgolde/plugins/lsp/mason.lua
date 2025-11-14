@@ -6,8 +6,6 @@ return {
   },
   config = function()
     local mason = require("mason")
-    local mason_lspconfig = require("mason-lspconfig")
-    local mason_tool_installer = require("mason-tool-installer")
 
     mason.setup({
       ui = {
@@ -16,23 +14,6 @@ return {
           package_pending = "➜",
           package_uninstalled = "✗",
         },
-      },
-    })
-
-    mason_lspconfig.setup({
-      ensure_installed = {
-        "html",
-        "cssls",
-        "tailwindcss",
-        "lua_ls",
-        "eslint",
-      },
-    })
-
-    mason_tool_installer.setup({
-      ensure_installed = {
-        "stylua",
-        "eslint_d", -- ✅ ensure it's installed
       },
     })
   end,
