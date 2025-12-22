@@ -1,6 +1,5 @@
 return {
   "neovim/nvim-lspconfig",
-  version = false, -- use HEAD
   event = { "BufReadPre", "BufNewFile" },
   dependencies = {
     { "hrsh7th/cmp-nvim-lsp",                lazy = false },
@@ -126,32 +125,27 @@ return {
     -- AUTO-SETUP INSTALLED SERVERS (Neovim 0.11+ API)
     ---------------------------------------------------------------------------
 
+
     local lspconfig = require("lspconfig")
 
-    for _, server in ipairs(mason_lspconfig.get_installed_servers()) do
-      local opts = {
-        capabilities = capabilities,
-      }
+    lspconfig.gopls.setup({
+      capabilities = capabilities,
+      settings = {
+        gopls = {
+          analyses = { unusedparams = true },
+          staticcheck = true,
+        },
+      },
+    })
 
-      if server == "lua_ls" then
-        opts.settings = {
-          Lua = {
-            diagnostics = { globals = { "vim" } },
-            completion = { callSnippet = "Replace" },
-          },
-        }
-      elseif server == "gopls" then
-        opts.settings = {
-          gopls = {
-            analyses = { unusedparams = true },
-            staticcheck = true,
-          },
-        }
-        opts.root_dir = vim.fs.dirname(vim.fs.find({ "go.mod", ".git" }, { upward = true })[1])
-      end
-
-      -- ✔ Correct API
-      lspconfig[server].setup(opts)
-    end
+    lspconfig.lua_ls.setup({
+      capabilities = capabilities,
+      settings = {
+        Lua = {
+          diagnostics = { globals = { "vim" } },
+          completion = { callSnippet = "Replace" },
+        },
+      },
+    })
   end,
 }

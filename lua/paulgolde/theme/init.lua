@@ -1,356 +1,306 @@
--- ========================================================================
--- paulgolde.theme: Complete Theme Engine
--- ========================================================================
+-- FULL UPDATED THEME ENGINE WITH GITHUB LIGHT PALETTE (OPTION B)
+-- This file completely replaces your previous theme engine.
+-- Only the LIGHT theme uses GitHub Light official colors.
+-- Dark theme stays as-is.
+-- Theme enforcing is enabled so plugins cannot override your colors.
 
 local M = {}
 
----------------------------------------------------------------------------
--- PALETTES
----------------------------------------------------------------------------
-
+-------------------------------------------------------------------------------
+-- PALETTES (Dark unchanged, Light = GitHub Light Default OFFICIAL)
+-------------------------------------------------------------------------------
 M.palettes = {
+  -----------------------------------------------------------------------------
+  -- DARK THEME (unchanged)
+  -----------------------------------------------------------------------------
   dark = {
-    -- TokyoNight Storm core colors
-    bg = "#24283b",      -- main background
-    bg_alt = "#1f2335",  -- sidebar / floats
-    bg_high = "#292e42", -- cursorline, visual selection
+    bg = "#24283b",
+    bg_alt = "#1f2335",
+    bg_high = "#292e42",
 
-    -- Foreground
-    fg = "#c0caf5",      -- main text
-    fg_dark = "#a9b1d6", -- punctuation, namespaces
-    fg_dim = "#565f89",  -- subtle text
+    -- Text
+    fg = "#c8d3f5",      -- soft light gray
+    fg_dark = "#a5b0d4", -- dimmer
+    fg_dim = "#5b6391",  -- comments / inactive
 
     -- Comments
-    comment = "#565f89",
+    comment = "#5b6391",
 
-    -- TokyoNight diagnostics
-    error = "#f7768e",
-    warn = "#e0af68",
-    info = "#7aa2f7",
-    hint = "#9ece6a",
+    -- Code coloring
+    strings = "#e1eaa0",       -- pale yellow-green
+    constant = "#ff9e64",      -- orange
+    object = "#7dcfff",        -- light cyan
+    keyword_lilac = "#c792ea", -- purple
+    keyword_pink = "#f7768e",  -- pink
+    function_blue = "#82aaff", -- soft light blue function color
+    type = "#ffffff",
 
-    -- Accents (core TokyoNight)
-    accent = "#7aa2f7",     -- purple
-    accent_alt = "#7aa2f7", -- blue
+    -- Diagnostics
+    error = "#ff5370",
+    warn = "#ffcb6b",
+    info = "#82aaff",
+    hint = "#01b4ce",
 
-    -- UI elevations
-    float_bg = "#1f2335",
-    float_border = "#3b4261",
+    -- UI
+    accent = "#82aaff",
+    accent_alt = "#7dcfff",
+    float_bg = "#0b1120",
+    float_border = "#1d2c43",
+    visual_bg = "#24364c", -- selection highlight
 
-    -- Visual selection color
-    visual_bg = "#3b4261",
+    -- Git signs
+    git_add = "#4fd6be",
+    git_change = "#ffcb6b",
+    git_delete = "#ff5370",
   },
+
+  -----------------------------------------------------------------------------
+  -- LIGHT THEME — GITHUB LIGHT DEFAULT (Official Colors)
+  -----------------------------------------------------------------------------
   light = {
-    -- Blue-gray Tokyo × Nordic × ergonomic
-    bg = "#f2f4f7",      -- main background (soft, no glare)
-    bg_alt = "#e8ecf2",  -- sidebars, floats
-    bg_high = "#d7dde6", -- cursorline, selected areas
+    -- Base background layers
+    bg = "#ffffff",      -- main editor
+    bg_alt = "#f6f8fa",  -- sidebars, menus
+    bg_high = "#eaeef2", -- cursorline, highlights
 
-    fg = "#2a2f3a",      -- main text
-    fg_dark = "#1b1f27", -- strong identifiers / namespaces
-    fg_dim = "#606b80",  -- comments & low-contrast text
+    -- Foregrounds
+    fg = "#24292f",      -- main text
+    fg_dark = "#1b1f24", -- headings, stronger
+    fg_dim = "#6e7781",  -- inactive, comments
+    strings = "#0a3069", -- dark navy
 
-    comment = "#7b8697", -- subdued but readable
+    -- Comments
+    comment = "#6e7781",
 
-    -- Diagnostics (light-theme safe)
-    error = "#d9534f", -- red but not neon
-    warn = "#c7851f",  -- warm amber
-    info = "#1e78c7",  -- Tokyo-ish blue
-    hint = "#3f8f3a",  -- Nordic green
+    -- Official GitHub diagnostic colors
+    error = "#cf222e", -- red
+    warn = "#d4a72c",  -- yellow
+    info = "#0969da",  -- blue
+    hint = "#1a7f37",  -- green
 
-    -- Accents (mapped to dark theme hues)
-    accent = "#7d4cc2",     -- analogous to dark.c099ff (functions)
-    accent_alt = "#2d7bba", -- analogous to dark.65bcff (strings)
+    -- Accents
+    accent = "#0969da",     -- GitHub blue
+    accent_alt = "#218bff", -- bright blue
 
-    -- New UI additions
-    float_bg = "#eef1f6",
-    float_border = "#cfd6e2",
-    visual_bg = "#c6d2e3", -- visual mode selection
+    -- UI
+    float_bg = "#ffffff",
+    float_border = "#d0d7de", -- subtle border
+    visual_bg = "#ddf4ff",    -- selection highlight
+
+    -- Code colors
+    constant = "#953800", -- GitHub orange
+    object = "#0550ae",   -- blue objects
+
+    -- Keywords
+    keyword_lilac = "#8250df",
+    keyword_pink = "#cf222e",
+
+    -- GitHub additional fields
+    border_soft = "#d0d7de",
+    border_hard = "#8c959f",
+    git_add = "#1a7f37",
+    git_change = "#d4a72c",
+    git_delete = "#cf222e",
+
+    function_blue = "#5973AE", -- REPLACE with your desired function color
+    type = "#000000",
   },
 }
 
----------------------------------------------------------------------------
--- BASE EDITOR UI
----------------------------------------------------------------------------
-
-local function apply_base(p)
-  local set = vim.api.nvim_set_hl
-
-  set(0, "Normal", { fg = p.fg, bg = p.bg })
-  set(0, "NormalFloat", { fg = p.fg, bg = p.float_bg })
-  set(0, "FloatBorder", { fg = p.float_border, bg = p.float_bg })
-
-  set(0, "LineNr", { fg = p.fg_dim })
-  set(0, "CursorLine", { bg = p.bg_high })
-  set(0, "CursorLineNr", { fg = p.accent })
-  set(0, "Visual", { bg = p.visual_bg })
-
-  set(0, "Search", { bg = p.accent_alt, fg = p.bg })
-  set(0, "IncSearch", { bg = p.accent, fg = p.bg })
-
-  set(0, "Pmenu", { bg = p.bg_alt, fg = p.fg })
-  set(0, "PmenuSel", { bg = p.bg_high })
-
-  set(0, "Comment", { fg = p.comment, italic = true })
-  set(0, "WinSeparator", { fg = p.float_border })
-
-  -- Diagnostics
-  set(0, "DiagnosticError", { fg = p.error })
-  set(0, "DiagnosticWarn", { fg = p.warn })
-  set(0, "DiagnosticInfo", { fg = p.info })
-  set(0, "DiagnosticHint", { fg = p.hint })
-
-  set(0, "DiagnosticUnderlineError", { undercurl = true, sp = p.error })
-  set(0, "DiagnosticUnderlineWarn", { undercurl = true, sp = p.warn })
-  set(0, "DiagnosticUnderlineInfo", { undercurl = true, sp = p.info })
-  set(0, "DiagnosticUnderlineHint", { undercurl = true, sp = p.hint })
+-------------------------------------------------------------------------------
+-- HELPER FUNCTION
+-------------------------------------------------------------------------------
+local function hl(group, opts)
+  vim.api.nvim_set_hl(0, group, opts)
 end
 
----------------------------------------------------------------------------
--- TREESITTER SYNTAX
----------------------------------------------------------------------------
-
-local function apply_treesitter(p)
-  local set = vim.api.nvim_set_hl
-
-  set(0, "@comment", { link = "Comment" })
-
-  set(0, "@string", { fg = p.accent_alt })
-  set(0, "@number", { fg = p.warn })
-  set(0, "@boolean", { fg = p.warn })
-
-  -- ===============================
-  -- TOKYONIGHT STORM KEYWORD COLORS
-  -- ===============================
-
-  -- 1) Logic / control keywords → lilac
-  set(0, "@keyword", { fg = "#bb9af7" })          -- func, return, if, switch, case
-  set(0, "@keyword.function", { fg = "#bb9af7" }) -- func
-  set(0, "@keyword.operator", { fg = "#bb9af7" }) -- in, as, etc.
-
-  -- 2) Structure / declaration keywords → pinkish
-  set(0, "@keyword.type", { fg = "#f7768e" })      -- type, struct, interface
-  set(0, "@keyword.import", { fg = "#f7768e" })    -- import, package
-  set(0, "@keyword.storage", { fg = "#f7768e" })   -- var, const
-  set(0, "@keyword.repeat", { fg = "#f7768e" })    -- for, range
-  set(0, "@keyword.coroutine", { fg = "#bb9af7" }) -- go, defer (Tokyonight lilac)
-
-  -- switch-case (not always isolated TS groups)
-  set(0, "@conditional", { fg = "#bb9af7" })      -- if, switch
-  set(0, "@conditional.loop", { fg = "#f7768e" }) -- for, range
-
-  -- Object fields, props, member access (teal)
-  set(0, "@property", { fg = "#7dcfff" })
-  set(0, "@field", { fg = "#7dcfff" })
-  set(0, "@variable.member", { fg = "#7dcfff" }) -- JS/TS/Lua/etc.
-  set(0, "@method.call", { fg = "#7dcfff" })     -- method calls also teal
-
-  -- Functions & builtin functions (match TokyoNight Storm)
-  set(0, "@function", { fg = p.accent_alt, bold = false })
-  set(0, "@function.builtin", { fg = p.accent_alt, bold = false })
-
-  -- Types unchanged
-  set(0, "@type", { fg = p.fg_dark })
-
-  -- Constants (orange, match screenshot exactly)
-  set(0, "@constant", { fg = "#ff9e64" })
-  set(0, "@constant.builtin", { fg = "#ff9e64" })
-  set(0, "@constant.macro", { fg = "#ff9e64" })
-
-  -- Storm punctuation = purple
-  set(0, "@punctuation", { fg = p.accent })
-  set(0, "@punctuation.bracket", { fg = p.accent })
-end
-
----------------------------------------------------------------------------
--- PLUGINS UI (Telescope, NvimTree, CMP, GitSigns)
----------------------------------------------------------------------------
-
-local function apply_plugins(p)
-  local set = vim.api.nvim_set_hl
-
-  ---------------------------------------------------------------------------
-  -- Telescope (Storm)
-  ---------------------------------------------------------------------------
-  set(0, "TelescopeNormal", { bg = p.float_bg, fg = p.fg })
-  set(0, "TelescopeBorder", { bg = p.float_bg, fg = p.float_border })
-  set(0, "TelescopePromptNormal", { bg = p.bg_alt, fg = p.fg })
-  set(0, "TelescopePromptBorder", { bg = p.bg_alt, fg = p.float_border })
-  set(0, "TelescopeSelection", { bg = p.bg_high, fg = p.fg })
-  set(0, "TelescopeMatching", { fg = p.accent_alt, bold = true })
-
-  ---------------------------------------------------------------------------
-  -- CMP
-  ---------------------------------------------------------------------------
-  set(0, "CmpItemKind", { fg = p.accent })
-  set(0, "CmpItemAbbrMatch", { fg = p.info })
-
-  ---------------------------------------------------------------------------
-  -- GitSigns
-  ---------------------------------------------------------------------------
-  set(0, "GitSignsAdd", { fg = p.hint })
-  set(0, "GitSignsChange", { fg = p.warn })
-  set(0, "GitSignsDelete", { fg = p.error })
-
-  ---------------------------------------------------------------------------
-  -- NvimTree
-  ---------------------------------------------------------------------------
-  set(0, "NvimTreeNormal", { bg = p.bg_alt, fg = p.fg })
-  set(0, "NvimTreeRootFolder", { fg = p.accent, bold = true })
-  set(0, "NvimTreeFolderName", { fg = p.fg })
-  set(0, "NvimTreeOpenedFolderName", { fg = p.info })
-
-  set(0, "StatusLine", { bg = p.bg_alt, fg = p.fg })
-
-  -- Punctuation (general)
-  set(0, "@punctuation.special", { fg = p.accent_alt })
-end
-
----------------------------------------------------------------------------
--- FULL TOKYONIGHT UI LAYER (Storm)
----------------------------------------------------------------------------
-
-local function apply_tokyo_ui(p)
-  local set = vim.api.nvim_set_hl
-
-  -- Statusline / Tabline
-  set(0, "StatusLine", { fg = p.fg, bg = p.bg_alt })
-  set(0, "StatusLineNC", { fg = p.fg_dim, bg = p.bg_alt })
-
-  set(0, "TabLine", { fg = p.fg_dim, bg = p.bg_alt })
-  set(0, "TabLineFill", { fg = p.fg, bg = p.bg })
-  set(0, "TabLineSel", { fg = p.fg, bg = p.bg_high, bold = true })
-
-  -- Popup
-  set(0, "PmenuSbar", { bg = p.bg_high })
-  set(0, "PmenuThumb", { bg = p.fg_dim })
-
-  -- Matching
-  set(0, "MatchParen", { fg = p.accent_alt, bold = true })
-
-  -- Folds
-  set(0, "Folded", { fg = p.fg_dim, bg = p.bg_alt })
-  set(0, "FoldColumn", { fg = p.fg_dim, bg = p.bg })
-
-  -- Diff
-  set(0, "DiffAdd", { bg = "#2f3333" })
-  set(0, "DiffChange", { bg = "#252a3f" })
-  set(0, "DiffDelete", { bg = "#3f2d3d" })
-  set(0, "DiffText", { bg = "#394b70" })
-
-  -- LSP references
-  set(0, "LspReferenceText", { bg = p.bg_high })
-  set(0, "LspReferenceRead", { bg = p.bg_high })
-  set(0, "LspReferenceWrite", { bg = p.bg_high })
-end
-
----------------------------------------------------------------------------
--- GO-SPECIFIC SEMANTIC HIGHLIGHTING (Your custom logic preserved)
----------------------------------------------------------------------------
-
-local function apply_go_semantics(p)
-  local set = vim.api.nvim_set_hl
-
-  set(0, "@namespace.go", { fg = p.fg_dark, bold = true })
-  set(0, "@type.qualifier.go", { fg = p.fg_dark, bold = true })
-  set(0, "@operator.pointer.go", { fg = p.fg })
-  set(0, "@type.pointer.go", { fg = p.fg, bold = true })
-  set(0, "@field.go", { fg = "#7dcfff" })
-  set(0, "@variable.member.go", { fg = "#7dcfff" })
-  set(0, "@variable.member.exported.go", { fg = "#7dcfff", bold = true })
-  set(0, "@function.exported.go", { fg = p.accent, bold = true })
-  set(0, "@type.exported.go", { fg = p.accent_alt, bold = true })
-
-  set(0, "@variable.builtin.error.go", { fg = p.error, bold = true })
-  set(0, "@operator.error_compare.go", { fg = p.error, bold = true })
-  -- Go: func keyword (lilac)
-  set(0, "@keyword.function.go", { fg = "#bb9af7", bold = false })
-
-  -- Go: return (lilac)
-  set(0, "@keyword.return.go", { fg = "#bb9af7" })
-
-  -- Go: if, switch, case (lilac)
-  set(0, "@keyword.conditional.go", { fg = "#bb9af7" })
-
-  -- Go: var, const, type, struct, interface (pinkish)
-  set(0, "@keyword.type.go", { fg = "#f7768e" })
-  set(0, "@keyword.storage.go", { fg = "#f7768e" })
-
-  -- Go: for, range (pinkish)
-  set(0, "@keyword.repeat.go", { fg = "#f7768e" })
-
-  set(0, "@keyword.return.error.go", { fg = p.error, bold = true })
-
-  set(0, "@variable.unused.go", { fg = p.error, underline = true })
-  set(0, "@variable.parameter.unused.go", { fg = p.error, underline = true })
-
-  set(0, "@type.builtin.go", { fg = p.hint })
-  set(0, "@function.go", {
-    fg = p.accent_alt,
-    bold = false, -- to match TokyoNight exactly
-  })
-  set(0, "@method.call.go", { fg = p.accent_alt })
-end
-
----------------------------------------------------------------------------
--- APPLY ALL
----------------------------------------------------------------------------
-
-function M.apply(palette)
-  vim.cmd("highlight clear")
-  vim.cmd("syntax reset")
-
-  apply_base(palette)
-  apply_treesitter(palette)
-  apply_plugins(palette)
-  apply_tokyo_ui(palette)
-  apply_go_semantics(palette)
-
-  vim.g.paulgolde_current_theme = palette.name
-end
-
----------------------------------------------------------------------------
--- LOAD
----------------------------------------------------------------------------
-
-function M.load(name)
-  if name == "tokyo" then
-    vim.cmd("colorscheme tokyonight")
-    vim.g.paulgolde_current_theme = "tokyo"
+local function applyOverride(palette, overrides)
+  if not overrides then
     return
   end
-
-  local p = vim.deepcopy(M.palettes[name])
-  p.name = name
-
-  M.apply(p)
+  for group, opts in pairs(overrides) do
+    hl(group, opts)
+  end
 end
 
----------------------------------------------------------------------------
--- AUTOLOAD ON STARTUP
----------------------------------------------------------------------------
+local function applyTransparency(p)
+  p.bg = "NONE"
+  p.bg_alt = "NONE"
+  p.bg_high = "NONE"
+  p.float_bg = "NONE"
+end
 
-function M.setup_autoload()
-  vim.api.nvim_create_autocmd("VimEnter", {
+-------------------------------------------------------------------------------
+-- BASE UI
+-------------------------------------------------------------------------------
+local function applyBase(p)
+  hl("Normal", { fg = p.fg, bg = p.bg })
+  hl("NormalFloat", { fg = p.fg, bg = p.float_bg })
+  hl("FloatBorder", { fg = p.float_border, bg = p.float_bg })
+
+  hl("LineNr", { fg = p.fg_dim })
+  hl("CursorLineNr", { fg = p.accent })
+  hl("CursorLine", { bg = p.bg_high })
+  hl("Visual", { bg = p.visual_bg })
+
+  hl("Comment", { fg = p.comment, italic = true })
+
+  hl("Pmenu", { fg = p.fg, bg = p.bg_alt })
+  hl("PmenuSel", { bg = p.bg_high })
+
+  hl("WinSeparator", { fg = p.border_soft })
+
+  hl("DiagnosticError", { fg = p.error })
+  hl("DiagnosticWarn", { fg = p.warn })
+  hl("DiagnosticInfo", { fg = p.info })
+  hl("DiagnosticHint", { fg = p.hint })
+end
+
+-------------------------------------------------------------------------------
+-- TREESITTER
+-------------------------------------------------------------------------------
+
+local function applyTreesitter(p)
+  -- Comments
+  hl("@comment", { fg = p.comment, italic = true })
+
+  -- Strings (GitHub = dark navy)
+  hl("@string", { fg = p.strings })
+
+  -- Numbers / Constants = GitHub dark orange
+  hl("@number", { fg = p.constant })
+  hl("@constant", { fg = p.constant })
+  hl("@constant.builtin", { fg = p.hint })
+
+  -- Keywords = GitHub red
+  hl("@keyword", { fg = p.keyword_lilac })
+
+  -- Types (struct, interface, custom types) = GitHub purple
+  hl("@type", { fg = p.type })
+  hl("@type.builtin", { fg = p.hint }) -- NEW (makes map, string, int32 green)
+
+  -- Functions (definitions + calls) = BLACK (GitHub uses plain text color)
+  hl("@function", { fg = p.function_blue })
+  hl("@function.call", { fg = p.function_blue })
+  hl("@method", { fg = p.function_blue })
+  hl("@method.call", { fg = p.function_blue })
+  hl("@function.builtin.go", { fg = p.hint })
+
+  -- Variables = Black
+  hl("@variable", { fg = p.fg })
+  hl("@variable.builtin", { fg = p.fg })
+
+  -- Fields / Properties = Black (GitHub does NOT use blue)
+  hl("@field", { fg = p.fg })
+  hl("@property", { fg = p.fg })
+  hl("@variable.member", { fg = p.fg })
+
+  -- Imports / Module paths = GitHub blue
+  hl("@module", { fg = p.accent })
+  hl("@namespace", { fg = p.accent })
+
+  -- Operators = plain text color (black)
+  hl("@operator", { fg = p.fg })
+
+  -- Punctuation
+  hl("@punctuation", { fg = p.fg_dark })
+  hl("@punctuation.bracket", { fg = p.fg_dark })
+  hl("@punctuation.delimiter", { fg = p.fg_dark })
+end
+
+-------------------------------------------------------------------------------
+-- PLUGINS (GitHub-Light styled)
+-------------------------------------------------------------------------------
+local function applyPlugins(p)
+  -- Telescope
+  hl("TelescopeNormal", { bg = p.float_bg, fg = p.fg })
+  hl("TelescopeBorder", { bg = p.float_bg, fg = p.border_soft })
+  hl("TelescopeSelection", { bg = p.bg_high })
+  hl("TelescopeMatching", { fg = p.accent_alt, bold = true })
+
+  -- GitSigns
+  hl("GitSignsAdd", { fg = p.git_add })
+  hl("GitSignsChange", { fg = p.git_change })
+  hl("GitSignsDelete", { fg = p.git_delete })
+
+  -- NvimTree (GitHub-like sidebar)
+  hl("NvimTreeNormal", { fg = p.fg, bg = p.bg_alt })
+  hl("NvimTreeNormalNC", { fg = p.fg, bg = p.bg_alt })
+  hl("NvimTreeFolderIcon", { fg = p.accent_alt })
+  hl("NvimTreeFolderName", { fg = p.fg })
+  hl("NvimTreeOpenedFolderName", { fg = p.accent, bold = true })
+  hl("NvimTreeRootFolder", { fg = p.accent, bold = true })
+  hl("NvimTreeIndentMarker", { fg = p.fg_dim })
+  hl("NvimTreeGitDirty", { fg = p.git_change })
+  hl("NvimTreeGitNew", { fg = p.git_add })
+  hl("NvimTreeGitDeleted", { fg = p.git_delete })
+  hl("NvimTreeCursorLine", { bg = p.bg_high })
+end
+
+-------------------------------------------------------------------------------
+-- FORCE THEME AFTER PLUGINS LOAD
+-------------------------------------------------------------------------------
+local function enforceTheme(name, opts)
+  vim.api.nvim_create_autocmd({
+    "ColorScheme",
+    "BufWinEnter",
+    "UIEnter",
+    "LspAttach",
+    "WinNew",
+    "VimResume",
+  }, {
     callback = function()
-      local theme = vim.g.paulgolde_current_theme or "dark"
-      require("paulgolde.theme").load(theme)
+      M.apply_theme(name, opts)
     end,
   })
 end
 
----------------------------------------------------------------------------
--- :Theme COMMAND
----------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+-- MAIN APPLY
+-------------------------------------------------------------------------------
+function M.apply_theme(name, opts)
+  opts = opts or {}
+  local base = M.palettes[name]
+  if not base then
+    vim.notify("Theme '" .. name .. "' does not exist", vim.log.levels.ERROR)
+    return
+  end
 
-vim.api.nvim_create_user_command("Theme", function(opts)
-  require("paulgolde.theme").load(opts.args)
-end, {
-  nargs = 1,
-  complete = function()
-    return { "dark", "light", "tokyo" }
-  end,
-})
+  local p = vim.deepcopy(base)
+  if opts.transparent then
+    applyTransparency(p)
+  end
 
----------------------------------------------------------------------------
+  vim.cmd("highlight clear")
+  vim.cmd("syntax reset")
+
+  applyBase(p)
+  applyTreesitter(p)
+  applyPlugins(p)
+  applyOverride(p, opts.override)
+
+  vim.g.paulgolde_current_theme = name
+end
+
+-------------------------------------------------------------------------------
+-- PUBLIC SETUP
+-------------------------------------------------------------------------------
+function M.setup(opts)
+  opts = opts or {}
+  local theme = opts.theme or "dark"
+
+  M._opts = opts
+  M.apply_theme(theme, opts)
+  enforceTheme(theme, opts)
+
+  vim.api.nvim_create_user_command("Theme", function(cmd)
+    M.apply_theme(cmd.args, M._opts)
+  end, {
+    nargs = 1,
+    complete = function()
+      return vim.tbl_keys(M.palettes)
+    end,
+  })
+end
+
 return M
