@@ -279,7 +279,7 @@ function M.apply_theme(name, opts)
   applyPlugins(p)
   applyOverride(p, opts.override)
 
-  vim.g.paulgolde_current_theme = name
+  vim.g.paulpaule21_current_theme = name
 end
 
 -------------------------------------------------------------------------------

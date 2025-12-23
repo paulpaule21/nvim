@@ -1,11 +1,11 @@
 return {
-  name = "paulgolde-theme",
-  dir = vim.fn.stdpath("config") .. "/lua/paulgolde", -- LOCAL path
+  name = "paulpaule21-theme",
+  dir = vim.fn.stdpath("config") .. "/lua/paulpaule21", -- LOCAL path
   lazy = false,
   priority = 1000,
 
   config = function()
-    require("paulgolde.theme").setup({
+    require("paulpaule21.theme").setup({
       theme = "dark",
       transparent = false,
       override = {},

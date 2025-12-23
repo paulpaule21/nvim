@@ -1,7 +1,9 @@
 return {
+  dir = vim.fn.stdpath("config") .. "/lua/paulpaule21",
+  name = "qfexec-commands",
   event = "VeryLazy",
   config = function()
-    local qfexec = require("paulgolde.qfexec")
+    local qfexec = require("paulpaule21.qfexec")
 
     local function grep(p)
       local grepprg = vim.api.nvim_get_option_value("grepprg", {})
