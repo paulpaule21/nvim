@@ -1,10 +1,7 @@
--- ~/.config/nvim/lua/paulgolde/plugins/commands.lua
 return {
-  dir = vim.fn.stdpath("config") .. "/lua/paulgolde/plugins", -- <-- valid local path
-  name = "qfexec-commands",
   event = "VeryLazy",
   config = function()
-    local qfexec = require("paulgolde.qfexec") -- ✅ or "qfexec" if in runtime path
+    local qfexec = require("paulgolde.qfexec")
 
     local function grep(p)
       local grepprg = vim.api.nvim_get_option_value("grepprg", {})

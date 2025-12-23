@@ -1,6 +1,7 @@
 return {
   "neovim/nvim-lspconfig",
   event = { "BufReadPre", "BufNewFile" },
+
   dependencies = {
     { "hrsh7th/cmp-nvim-lsp",                lazy = false },
     { "antosha417/nvim-lsp-file-operations", config = true },
@@ -11,105 +12,68 @@ return {
     ---------------------------------------------------------------------------
     -- CAPABILITIES
     ---------------------------------------------------------------------------
-    local mason_lspconfig = require("mason-lspconfig")
     local cmp_nvim_lsp = require("cmp_nvim_lsp")
     local capabilities = cmp_nvim_lsp.default_capabilities()
     local keymap = vim.keymap
 
     ---------------------------------------------------------------------------
-    -- MODERN DIAGNOSTIC SIGNS (Neovim 0.11+ API)
+    -- DIAGNOSTICS
     ---------------------------------------------------------------------------
     vim.diagnostic.config({
       signs = {
         text = {
           [vim.diagnostic.severity.ERROR] = " ",
-          [vim.diagnostic.severity.WARN] = " ",
-          [vim.diagnostic.severity.HINT] = "󰠠 ",
-          [vim.diagnostic.severity.INFO] = " ",
+          [vim.diagnostic.severity.WARN]  = " ",
+          [vim.diagnostic.severity.HINT]  = "󰠠 ",
+          [vim.diagnostic.severity.INFO]  = " ",
         },
       },
     })
 
     ---------------------------------------------------------------------------
-    -- ON_ATTACH VIA LspAttach
+    -- LSP ATTACH
     ---------------------------------------------------------------------------
     vim.api.nvim_create_autocmd("LspAttach", {
       group = vim.api.nvim_create_augroup("UserLspConfig", { clear = true }),
       callback = function(ev)
         local bufnr = ev.buf
         local client = vim.lsp.get_client_by_id(ev.data.client_id)
-
         local opts = { buffer = bufnr, silent = true }
 
         -----------------------------------------------------------------------
         -- KEYMAPS
         -----------------------------------------------------------------------
-        opts.desc = "LSP references"
-        keymap.set("n", "<leader>gR", "<cmd>Telescope lsp_references<CR>", opts)
-
-        opts.desc = "Go to declaration"
-        keymap.set("n", "<leader>gD", vim.lsp.buf.declaration, opts)
-
-        opts.desc = "Show definitions"
-        keymap.set("n", "<leader>gd", "<cmd>Telescope lsp_definitions<CR>", opts)
-
-        opts.desc = "Show implementations"
-        keymap.set("n", "<leader>gi", "<cmd>Telescope lsp_implementations<CR>", opts)
-
-        opts.desc = "Show type definitions"
-        keymap.set("n", "<leader>gt", "<cmd>Telescope lsp_type_definitions<CR>", opts)
-
-        opts.desc = "Code actions"
-        keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts)
-
-        opts.desc = "Rename symbol"
-        keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
-
-        opts.desc = "Buffer diagnostics"
-        keymap.set("n", "<leader>D", "<cmd>Telescope diagnostics bufnr=0<CR>", opts)
-
-        opts.desc = "Line diagnostics"
-        keymap.set("n", "<leader>d", vim.diagnostic.open_float, opts)
-
-        opts.desc = "Hover"
-        keymap.set("n", "<leader>K", vim.lsp.buf.hover, opts)
-
-        opts.desc = "Restart LSP"
-        keymap.set("n", "<leader>rs", "<cmd>LspRestart<CR>", opts)
+        keymap.set("n", "<leader>gR", "<cmd>Telescope lsp_references<CR>",
+          vim.tbl_extend("force", opts, { desc = "LSP references" }))
+        keymap.set("n", "<leader>gD", vim.lsp.buf.declaration,
+          vim.tbl_extend("force", opts, { desc = "Go to declaration" }))
+        keymap.set("n", "<leader>gd", "<cmd>Telescope lsp_definitions<CR>",
+          vim.tbl_extend("force", opts, { desc = "Definitions" }))
+        keymap.set("n", "<leader>gi", "<cmd>Telescope lsp_implementations<CR>",
+          vim.tbl_extend("force", opts, { desc = "Implementations" }))
+        keymap.set("n", "<leader>gt", "<cmd>Telescope lsp_type_definitions<CR>",
+          vim.tbl_extend("force", opts, { desc = "Type definitions" }))
+        keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action,
+          vim.tbl_extend("force", opts, { desc = "Code actions" }))
+        keymap.set("n", "<leader>rn", vim.lsp.buf.rename, vim.tbl_extend("force", opts, { desc = "Rename symbol" }))
+        keymap.set("n", "<leader>D", "<cmd>Telescope diagnostics bufnr=0<CR>",
+          vim.tbl_extend("force", opts, { desc = "Buffer diagnostics" }))
+        keymap.set("n", "<leader>d", vim.diagnostic.open_float,
+          vim.tbl_extend("force", opts, { desc = "Line diagnostics" }))
+        keymap.set("n", "<leader>K", vim.lsp.buf.hover, vim.tbl_extend("force", opts, { desc = "Hover" }))
+        keymap.set("n", "<leader>rs", "<cmd>LspRestart<CR>", vim.tbl_extend("force", opts, { desc = "Restart LSP" }))
 
         -----------------------------------------------------------------------
-        -- AUTOFORMAT
+        -- FORMAT ON SAVE
         -----------------------------------------------------------------------
-        if client.name == "gopls" then
+        if client.name == "gopls" or client:supports_method("textDocument/formatting") then
           vim.api.nvim_create_autocmd("BufWritePre", {
             buffer = bufnr,
             callback = function()
-              -- organize imports
-              local params = {
-                context = { only = { "source.organizeImports" } },
-                textDocument = vim.lsp.util.make_text_document_params(),
-              }
-
-              local result = vim.lsp.buf_request_sync(bufnr, "textDocument/codeAction", params, 1000)
-
-              for _, res in pairs(result or {}) do
-                for _, action in pairs(res.result or {}) do
-                  if action.edit then
-                    vim.lsp.util.apply_workspace_edit(action.edit, client.offset_encoding)
-                  elseif action.command then
-                    vim.lsp.buf.execute_command(action.command)
-                  end
-                end
-              end
-
-              vim.lsp.buf.format({ bufnr = bufnr })
-            end,
-          })
-        elseif client:supports_method("textDocument/formatting") then
-          vim.api.nvim_create_autocmd("BufWritePre", {
-            buffer = bufnr,
-            callback = function()
-              vim.lsp.buf.format({ bufnr = bufnr })
+              vim.lsp.buf.format({
+                bufnr = bufnr,
+                timeout_ms = 1000,
+              })
             end,
           })
         end
@@ -117,22 +81,17 @@ return {
     })
 
     ---------------------------------------------------------------------------
-    -- MASON-LSPCONFIG
+    -- LSP SERVERS (EXPLICIT & STABLE)
     ---------------------------------------------------------------------------
-    mason_lspconfig.setup()
-
-    ---------------------------------------------------------------------------
-    -- AUTO-SETUP INSTALLED SERVERS (Neovim 0.11+ API)
-    ---------------------------------------------------------------------------
-
-
     local lspconfig = require("lspconfig")
 
     lspconfig.gopls.setup({
       capabilities = capabilities,
       settings = {
         gopls = {
-          analyses = { unusedparams = true },
+          analyses = {
+            unusedparams = true,
+          },
           staticcheck = true,
         },
       },
@@ -142,8 +101,12 @@ return {
       capabilities = capabilities,
       settings = {
         Lua = {
-          diagnostics = { globals = { "vim" } },
-          completion = { callSnippet = "Replace" },
+          diagnostics = {
+            globals = { "vim" },
+          },
+          completion = {
+            callSnippet = "Replace",
+          },
         },
       },
     })

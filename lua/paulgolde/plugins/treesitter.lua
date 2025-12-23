@@ -2,43 +2,46 @@ return {
   "nvim-treesitter/nvim-treesitter",
   event = { "BufReadPre", "BufNewFile" },
   build = ":TSUpdate",
-  dependencies = {
-    "windwp/nvim-ts-autotag",
-  },
   config = function()
-    -- import nvim-treesitter plugin
-    local treesitter = require("nvim-treesitter.configs")
+    require("nvim-treesitter.configs").setup({
+      -----------------------------------------------------------------------
+      -- REQUIRED (Neovim 0.11+)
+      -----------------------------------------------------------------------
+      modules = {},
+      sync_install = false,
+      ignore_install = {},
+      auto_install = true,
 
-    -- configure treesitter
-    treesitter.setup({ -- enable syntax highlighting
-      highlight = {
-        enable = true,
-      },
-      -- enable indentation
-      indent = { enable = true },
-      -- enable autotagging (w/ nvim-ts-autotag plugin)
-      autotag = {
-        enable = true,
-      },
-      -- ensure these language parsers are installed
-      ensure_installed = {
-        "json",
-        "yaml",
-        "lua",
-        "vim",
-        "dockerfile",
-        "gitignore",
-        "query",
-        "vimdoc",
-      },
+      -----------------------------------------------------------------------
+      -- FEATURES
+      -----------------------------------------------------------------------
+      highlight = { enable = true, },
+      indent = { enable = true, },
       incremental_selection = {
         enable = true,
         keymaps = {
           init_selection = "<C-space>",
           node_incremental = "<C-space>",
-          scope_incremental = false,
           node_decremental = "<bs>",
         },
+      },
+
+      -----------------------------------------------------------------------
+      -- PARSERS
+      -----------------------------------------------------------------------
+      ensure_installed = {
+        "lua",
+        "vim",
+        "vimdoc",
+        "query",
+        "json",
+        "yaml",
+        "dockerfile",
+        "gitignore",
+        "go",
+        "gomod",
+        "gosum",
+        "proto",
       },
     })
   end,

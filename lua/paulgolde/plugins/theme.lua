@@ -10,9 +10,5 @@ return {
       transparent = false,
       override = {},
     })
-
-    vim.keymap.set("n", "<leader>rt", function()
-      require("paulgolde.plugins.theme").apply_theme("light", require("paulgolde.plugins.theme")._opts)
-    end, { desc = "Reload theme" })
   end,
 }
