@@ -3,9 +3,9 @@ return {
   event = { "BufReadPre", "BufNewFile" },
 
   dependencies = {
-    { "hrsh7th/cmp-nvim-lsp", lazy = false},
+    { "hrsh7th/cmp-nvim-lsp",                lazy = false },
     { "antosha417/nvim-lsp-file-operations", config = true },
-    { "folke/neodev.nvim",                   opts = {} },
+    { "folke/lazydev.nvim",                  ft = "lua" },
   },
 
   config = function()
@@ -66,8 +66,19 @@ return {
         -----------------------------------------------------------------------
         -- FORMAT ON SAVE
         -----------------------------------------------------------------------
-        if client.name == "gopls" or client:supports_method("textDocument/formatting") then
+        local group = vim.api.nvim_create_augroup("LspFormat", { clear = false })
+
+        if client
+            and (
+              client.name == "gopls"
+              or client.supports_method
+              and client:supports_method("textDocument/formatting")
+            )
+        then
+          vim.api.nvim_clear_autocmds({ group = group, buffer = bufnr })
+
           vim.api.nvim_create_autocmd("BufWritePre", {
+            group = group,
             buffer = bufnr,
             callback = function()
               vim.lsp.buf.format({
@@ -83,9 +94,7 @@ return {
     ---------------------------------------------------------------------------
     -- LSP SERVERS (EXPLICIT & STABLE)
     ---------------------------------------------------------------------------
-    local lspconfig = require("lspconfig")
-
-    lspconfig.gopls.setup({
+    vim.lsp.config("gopls", {
       capabilities = capabilities,
       settings = {
         gopls = {
@@ -97,7 +106,7 @@ return {
       },
     })
 
-    lspconfig.lua_ls.setup({
+    vim.lsp.config("lua_ls", {
       capabilities = capabilities,
       settings = {
         Lua = {
@@ -110,5 +119,8 @@ return {
         },
       },
     })
+
+    -- Enable servers
+    vim.lsp.enable({ "gopls", "lua_ls" })
   end,
 }
