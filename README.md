@@ -31,7 +31,6 @@ This setup is tailored primarily for **Go and protobuf development**, while stay
     │   ├── lsp
     │   ├── nvim-cmp.lua
     │   ├── nvim-tree.lua
-    │   ├── telescope.lua
     │   ├── treesitter.lua
     │   └── lualine.lua
     ├── theme
