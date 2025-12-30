@@ -38,5 +38,5 @@ opt.splitbelow = true -- split horizontal window to the bottom
 -- turn off swapfile
 opt.swapfile = false
 
-opt.grepprg = "rg --vimgrep --smart-case --hidden"
+opt.grepprg = "rg --vimgrep --smart-case"
 opt.grepformat = "%f:%l:%c:%m"

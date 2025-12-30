@@ -6,43 +6,43 @@ return {
   config = function()
     local qfexec = require("paulpaule21.qfexec")
 
+    -- Search for word in files (content)
     local function grep_word(p)
       local grepprg = vim.api.nvim_get_option_value("grepprg", {})
       local cmd = vim.fn.split(grepprg)
+
       vim.list_extend(cmd, p.fargs)
+      table.insert(cmd, ".") -- search root
 
-      if not vim.tbl_contains(p.fargs, ".") then
-        table.insert(cmd, ".")
-      end
-
-      qfexec.exec(cmd, false)
+      qfexec.exec(cmd, false, false)
     end
 
+    -- Search for file names
     local function grep_file(p)
       local pattern = p.args
 
-      -- rg --files --glob '*pattern*'
       local cmd = {
         "rg",
         "--files",
-        "--hidden",
         "--glob",
         "*" .. pattern .. "*",
       }
 
-      qfexec.exec(cmd, false)
+      qfexec.exec(cmd, false, true)
     end
 
-
+    -- make
     local function make(p)
       local makeprg = vim.api.nvim_get_option_value("makeprg", {})
       local cmd = vim.fn.split(makeprg)
       vim.list_extend(cmd, p.fargs)
-      qfexec.exec(cmd, true)
+
+      qfexec.exec(cmd, true, false)
     end
 
+    -- term
     local function term(p)
-      qfexec.exec(p.fargs, true)
+      qfexec.exec(p.fargs, true, false)
     end
 
     vim.api.nvim_create_user_command("GrepWord", grep_word, {
