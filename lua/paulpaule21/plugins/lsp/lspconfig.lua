@@ -38,30 +38,57 @@ return {
       callback = function(ev)
         local bufnr = ev.buf
         local client = vim.lsp.get_client_by_id(ev.data.client_id)
-        local opts = { buffer = bufnr, silent = true }
+        local keymap_opts = { buffer = bufnr, silent = true }
 
         -----------------------------------------------------------------------
         -- KEYMAPS
         -----------------------------------------------------------------------
-        keymap.set("n", "<leader>gR", "<cmd>Telescope lsp_references<CR>",
-          vim.tbl_extend("force", opts, { desc = "LSP references" }))
+
+        keymap.set("n", "<leader>gR", function()
+          vim.lsp.buf.references(nil, {
+            on_list = function(opts)
+              vim.fn.setqflist({}, "r", opts)
+              vim.cmd("copen")
+            end,
+          })
+        end, { desc = "LSP references (quickfix)" })
+
         keymap.set("n", "<leader>gD", vim.lsp.buf.declaration,
-          vim.tbl_extend("force", opts, { desc = "Go to declaration" }))
-        keymap.set("n", "<leader>gd", "<cmd>Telescope lsp_definitions<CR>",
-          vim.tbl_extend("force", opts, { desc = "Definitions" }))
+          vim.tbl_extend("force", keymap_opts, { desc = "Go to declaration" }))
+
+        keymap.set("n", "<leader>gd", function()
+          vim.lsp.buf.definition({
+            on_list = function(opts)
+              if #opts.items == 1 then
+                vim.cmd("edit " .. opts.items[1].filename)
+                vim.api.nvim_win_set_cursor(0, { opts.items[1].lnum, opts.items[1].col - 1 })
+              else
+                vim.fn.setqflist({}, "r", opts)
+                vim.cmd("copen")
+              end
+            end,
+          })
+        end, { desc = "LSP definitions" })
+
         keymap.set("n", "<leader>gi", "<cmd>Telescope lsp_implementations<CR>",
-          vim.tbl_extend("force", opts, { desc = "Implementations" }))
+          vim.tbl_extend("force", keymap_opts, { desc = "Implementations" }))
         keymap.set("n", "<leader>gt", "<cmd>Telescope lsp_type_definitions<CR>",
-          vim.tbl_extend("force", opts, { desc = "Type definitions" }))
+          vim.tbl_extend("force", keymap_opts, { desc = "Type definitions" }))
         keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action,
-          vim.tbl_extend("force", opts, { desc = "Code actions" }))
-        keymap.set("n", "<leader>rn", vim.lsp.buf.rename, vim.tbl_extend("force", opts, { desc = "Rename symbol" }))
-        keymap.set("n", "<leader>D", "<cmd>Telescope diagnostics bufnr=0<CR>",
-          vim.tbl_extend("force", opts, { desc = "Buffer diagnostics" }))
+          vim.tbl_extend("force", keymap_opts, { desc = "Code actions" }))
+        keymap.set("n", "<leader>rn", vim.lsp.buf.rename,
+          vim.tbl_extend("force", keymap_opts, { desc = "Rename symbol" }))
+
+        keymap.set("n", "<leader>D", function()
+          vim.diagnostic.setqflist({ open = true })
+        end, { desc = "Workspace diagnostics" })
+
         keymap.set("n", "<leader>d", vim.diagnostic.open_float,
-          vim.tbl_extend("force", opts, { desc = "Line diagnostics" }))
-        keymap.set("n", "<leader>K", vim.lsp.buf.hover, vim.tbl_extend("force", opts, { desc = "Hover" }))
-        keymap.set("n", "<leader>rs", "<cmd>LspRestart<CR>", vim.tbl_extend("force", opts, { desc = "Restart LSP" }))
+          { desc = "Line diagnostics" })
+
+        keymap.set("n", "<leader>K", vim.lsp.buf.hover, vim.tbl_extend("force", keymap_opts, { desc = "Hover" }))
+        keymap.set("n", "<leader>rs", "<cmd>LspRestart<CR>",
+          vim.tbl_extend("force", keymap_opts, { desc = "Restart LSP" }))
 
         -----------------------------------------------------------------------
         -- FORMAT ON SAVE
