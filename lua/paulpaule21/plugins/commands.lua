@@ -64,5 +64,39 @@ return {
       nargs = "+",
       desc = "Run shell command and send to quickfix",
     })
+
+    local keymap = vim.keymap
+
+    -- Grep word (prompt)
+    keymap.set("n", "<leader>fw", function()
+      vim.ui.input({ prompt = "Grep word: " }, function(input)
+        if input and input ~= "" then
+          vim.cmd("GrepWord " .. input)
+        end
+      end)
+    end, { desc = "Grep word (quickfix)" })
+
+    -- Grep file name (prompt)
+    keymap.set("n", "<leader>ff", function()
+      vim.ui.input({ prompt = "Grep file: " }, function(input)
+        if input and input ~= "" then
+          vim.cmd("GrepFile " .. input)
+        end
+      end)
+    end, { desc = "Find file (quickfix)" })
+
+    -- Make
+    keymap.set("n", "<leader>fm", function()
+      vim.cmd("Make")
+    end, { desc = "Run make (quickfix)" })
+
+    -- Term (prompt)
+    keymap.set("n", "<leader>ft", function()
+      vim.ui.input({ prompt = "Shell command: " }, function(input)
+        if input and input ~= "" then
+          vim.cmd("Term " .. input)
+        end
+      end)
+    end, { desc = "Run shell command (quickfix)" })
   end,
 }
