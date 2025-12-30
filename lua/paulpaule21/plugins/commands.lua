@@ -68,7 +68,7 @@ return {
     local keymap = vim.keymap
 
     -- Grep word (prompt)
-    keymap.set("n", "<leader>fw", function()
+    keymap.set("n", "<leader>fs", function()
       vim.ui.input({ prompt = "Grep word: " }, function(input)
         if input and input ~= "" then
           vim.cmd("GrepWord " .. input)
