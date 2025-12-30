@@ -7,6 +7,7 @@ local job = {
   last_line = "",
   started = nil,
   autoscroll = true,
+  files_only = false,
 }
 
 local function on_job_output(id, data, event)
@@ -109,21 +110,21 @@ function M.exec(command, autoscroll)
   job.cmd = table.concat(command, " ")
   job.last_line = ""
   job.autoscroll = autoscroll
-  job.id = vim.fn.jobstart(job.cmd, {
+
+  -- ✅ PASS LIST, NOT STRING
+  job.id = vim.fn.jobstart(command, {
     on_exit = on_job_exit,
     on_stdout = on_job_output,
     on_stderr = on_job_output,
   })
 
-  if job.id < 0 then
-    error("'" .. job.cmd .. "' is not executable")
-  elseif job.id == 0 then
-    error("invalid arguments to start command")
-  else
-    job.started = vim.fn.reltime()
-    vim.fn.setqflist({}, "r", { title = job.cmd .. "  (running)", lines = {} })
-    vim.cmd("copen")
+  if job.id <= 0 then
+    error("Failed to start job: " .. job.cmd)
   end
+
+  job.started = vim.fn.reltime()
+  vim.fn.setqflist({}, "r", { title = job.cmd .. " (running)", lines = {} })
+  vim.cmd("copen")
 end
 
 -- Ctrl-C to terminate in quickfix window

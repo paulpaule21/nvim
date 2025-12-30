@@ -22,7 +22,7 @@ This setup is tailored primarily for **Go and protobuf development**, while stay
 ~/.config/nvim
 ├── init.lua
 ├── lazy-lock.json
-└── lua/paulgolde
+└── lua/paulpaule21
     ├── core
     │   ├── init.lua
     │   ├── options.lua
