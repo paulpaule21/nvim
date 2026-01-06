@@ -3,6 +3,7 @@ return {
   event = { "BufReadPre", "BufNewFile" },
   build = ":TSUpdate",
   config = function()
+    require("orgmode").setup({})
     require("nvim-treesitter.configs").setup({
       -----------------------------------------------------------------------
       -- REQUIRED (Neovim 0.11+)
